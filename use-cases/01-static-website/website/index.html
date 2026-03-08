@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Cloud-Hosted Static Website</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e0e0e0;
+    }
+
+    .container {
+      text-align: center;
+      padding: 3rem 2rem;
+      max-width: 700px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #e94560;
+      color: white;
+      padding: 0.4rem 1.2rem;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: 2.8rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+
+    h1 span { color: #e94560; }
+
+    p {
+      font-size: 1.1rem;
+      line-height: 1.8;
+      color: #a0aec0;
+      margin-bottom: 2rem;
+    }
+
+    .tech-stack {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .tech-badge {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+
+    .status {
+      background: rgba(72, 187, 120, 0.1);
+      border: 1px solid rgba(72, 187, 120, 0.3);
+      color: #68d391;
+      padding: 0.8rem 2rem;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 500;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      background: #68d391;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="badge">☁️ Cloud Infrastructure Project</div>
+    <h1>Deployed with <span>Terraform</span> &amp; AWS S3</h1>
+    <p>
+      This static website is hosted on Amazon S3 and provisioned entirely
+      using Infrastructure as Code with Terraform. No servers required —
+      just scalable, cost-effective cloud storage serving your content.
+    </p>
+    <div class="tech-stack">
+      <span class="tech-badge">🏗️ Terraform</span>
+      <span class="tech-badge">☁️ AWS S3</span>
+      <span class="tech-badge">🐳 Docker</span>
+      <span class="tech-badge">📄 HTML/CSS</span>
+    </div>
+    <div class="status">
+      <div class="dot"></div>
+      Site is live and serving content
+    </div>
+  </div>
+</body>
+</html>

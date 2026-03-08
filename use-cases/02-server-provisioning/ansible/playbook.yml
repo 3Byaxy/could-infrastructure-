@@ -1,0 +1,132 @@
+---
+# Ansible Playbook: Web Server Provisioning
+# Installs Nginx, configures UFW firewall, and deploys a sample web app
+
+- name: Configure Web Server
+  hosts: webservers
+  become: true
+
+  vars:
+    app_dir: /var/www/html
+    app_name: cloud-infra-app
+
+  tasks:
+    # ── System Update ────────────────────────────────────────────────────────
+    - name: Update apt package cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    # ── Nginx Installation ───────────────────────────────────────────────────
+    - name: Install Nginx
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+
+    - name: Ensure Nginx is started and enabled
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+    # ── Firewall Configuration ───────────────────────────────────────────────
+    - name: Install UFW
+      ansible.builtin.apt:
+        name: ufw
+        state: present
+
+    - name: Allow SSH through UFW
+      community.general.ufw:
+        rule: allow
+        port: "22"
+        proto: tcp
+
+    - name: Allow HTTP through UFW
+      community.general.ufw:
+        rule: allow
+        port: "80"
+        proto: tcp
+
+    - name: Allow HTTPS through UFW
+      community.general.ufw:
+        rule: allow
+        port: "443"
+        proto: tcp
+
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
+        policy: deny
+
+    # ── App Deployment ───────────────────────────────────────────────────────
+    - name: Ensure web root directory exists
+      ansible.builtin.file:
+        path: "{{ app_dir }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0755"
+
+    - name: Deploy index.html
+      ansible.builtin.copy:
+        dest: "{{ app_dir }}/index.html"
+        owner: www-data
+        group: www-data
+        mode: "0644"
+        content: |
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <title>Provisioned by Ansible</title>
+            <style>
+              body { font-family: sans-serif; background: #0f3460; color: #e0e0e0;
+                     display: flex; align-items: center; justify-content: center;
+                     min-height: 100vh; margin: 0; text-align: center; }
+              h1 { font-size: 2.5rem; } span { color: #e94560; }
+            </style>
+          </head>
+          <body>
+            <div>
+              <h1>🚀 Deployed by <span>Ansible</span></h1>
+              <p>This server was provisioned with Terraform and configured with Ansible.</p>
+              <p>Nginx is running. Firewall is active.</p>
+            </div>
+          </body>
+          </html>
+
+    - name: Remove default Nginx site
+      ansible.builtin.file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: Reload Nginx
+
+    - name: Create Nginx virtual host config
+      ansible.builtin.copy:
+        dest: /etc/nginx/sites-available/{{ app_name }}
+        mode: "0644"
+        content: |
+          server {
+              listen 80 default_server;
+              listen [::]:80 default_server;
+              root {{ app_dir }};
+              index index.html;
+              server_name _;
+              location / {
+                  try_files $uri $uri/ =404;
+              }
+          }
+      notify: Reload Nginx
+
+    - name: Enable virtual host
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/{{ app_name }}
+        dest: /etc/nginx/sites-enabled/{{ app_name }}
+        state: link
+      notify: Reload Nginx
+
+  handlers:
+    - name: Reload Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded
