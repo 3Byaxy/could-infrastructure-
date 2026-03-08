@@ -1,0 +1,7 @@
+---
+# ansible/roles/webserver/defaults/main.yml
+
+app_port: 3000
+app_directory: /var/www/app
+nginx_worker_processes: auto
+nginx_worker_connections: 1024

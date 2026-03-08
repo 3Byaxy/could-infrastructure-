@@ -1,0 +1,21 @@
+---
+# ansible/playbooks/site.yml
+# Master playbook – runs all roles against appropriate host groups.
+
+- name: Apply common configuration to all hosts
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Configure web servers
+  hosts: webservers
+  become: true
+  roles:
+    - webserver
+
+- name: Configure database servers
+  hosts: databases
+  become: true
+  roles:
+    - database

@@ -1,0 +1,65 @@
+---
+# ansible/roles/webserver/tasks/main.yml
+
+- name: Update apt cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install Nginx and dependencies
+  apt:
+    name:
+      - nginx
+      - curl
+      - ufw
+    state: present
+
+- name: Allow HTTP through firewall
+  ufw:
+    rule: allow
+    port: "80"
+    proto: tcp
+
+- name: Allow HTTPS through firewall
+  ufw:
+    rule: allow
+    port: "443"
+    proto: tcp
+
+- name: Allow SSH through firewall
+  ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+
+- name: Enable UFW
+  ufw:
+    state: enabled
+
+- name: Deploy Nginx configuration
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/app
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Reload Nginx
+
+- name: Enable Nginx site
+  file:
+    src: /etc/nginx/sites-available/app
+    dest: /etc/nginx/sites-enabled/app
+    state: link
+  notify: Reload Nginx
+
+- name: Remove default Nginx site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+  notify: Reload Nginx
+
+- name: Ensure Nginx is started and enabled
+  service:
+    name: nginx
+    state: started
+    enabled: true
