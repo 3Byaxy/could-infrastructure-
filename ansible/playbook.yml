@@ -1,0 +1,105 @@
+---
+# ⚙️ ANSIBLE PLAYBOOK
+#
+# Ansible is a tool that automatically configures servers for you.
+# Instead of logging into each server and typing commands by hand,
+# you write them here and Ansible does the work!
+#
+# 💡 Analogy: Think of Ansible like a to-do list that runs itself on your servers.
+# You write the tasks once, and Ansible makes sure every server follows them!
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# PLAY: Configure Web Servers
+# A "play" is a set of tasks that run on a group of servers.
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- name: Configure Cloud Infrastructure Web Servers
+  # "hosts: all" means run these tasks on ALL servers in our inventory.
+  # You could also say "hosts: web_servers" to only target some servers.
+  hosts: all
+
+  # "become: true" means run tasks as a superuser (like using "sudo" in Linux).
+  # Some installation commands need administrator permissions!
+  become: true
+
+  # Variables specific to this play — easy to change in one place.
+  vars:
+    app_name: "cloud-app"
+    app_port: 8080
+    nginx_version: "latest"
+
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  # TASKS: The step-by-step instructions for each server.
+  # Each task uses a "module" — a built-in Ansible tool.
+  # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  tasks:
+
+    # TASK 1: Update the package list (like refreshing the app store)
+    - name: Update apt package cache
+      # "apt" is the Ansible module for managing packages on Ubuntu/Debian.
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600  # Only update if cache is older than 1 hour
+
+    # TASK 2: Install Nginx web server
+    # Nginx (pronounced "engine-x") serves your website to visitors.
+    - name: Install Nginx web server
+      apt:
+        name: nginx
+        state: present  # "present" means "make sure it's installed"
+
+    # TASK 3: Install Python 3 and pip
+    # Python is a popular programming language used in many cloud projects.
+    - name: Install Python 3 and pip
+      apt:
+        name:
+          - python3
+          - python3-pip
+        state: present
+
+    # TASK 4: Start and enable Nginx service
+    # "service" module controls system services (programs that run in the background).
+    - name: Start and enable Nginx
+      service:
+        name: nginx
+        state: started   # Make sure it's running RIGHT NOW
+        enabled: true    # Make sure it starts automatically when the server reboots
+
+    # TASK 5: Create the app directory
+    # "file" module creates, deletes, or sets permissions on files and folders.
+    - name: Create application directory
+      file:
+        path: /var/www/{{ app_name }}  # {{ }} is how you use variables in Ansible
+        state: directory
+        mode: '0755'   # Permissions: owner can read/write/execute, others can read/execute
+        owner: www-data
+        group: www-data
+
+    # TASK 6: Deploy a simple HTML homepage
+    # "copy" module copies files to the remote server.
+    - name: Deploy index.html
+      copy:
+        content: |
+          <html>
+            <body>
+              <h1>🚀 Cloud Infrastructure is running!</h1>
+              <p>Deployed with Ansible ⚙️</p>
+            </body>
+          </html>
+        dest: /var/www/{{ app_name }}/index.html
+        owner: www-data
+        group: www-data
+        mode: '0644'
+
+    # TASK 7: Configure the firewall to allow web traffic
+    # "ufw" module controls Ubuntu's built-in firewall.
+    - name: Allow HTTP traffic through firewall
+      ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+
+    # TASK 8: Print a success message at the end
+    # "debug" module prints messages — great for troubleshooting!
+    - name: Print deployment success message
+      debug:
+        msg: "✅ Server setup complete! Nginx is running on port 80."

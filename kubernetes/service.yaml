@@ -1,0 +1,46 @@
+---
+# ☸️ KUBERNETES SERVICE
+#
+# A Service is how you expose your app to the world (or to other apps).
+# Without a Service, your Pods are hidden and unreachable!
+#
+# 💡 Analogy: Think of a Service like a receptionist at a hotel —
+# visitors tell the receptionist what they need, and the receptionist
+# routes them to the right room (Pod). If a room changes, the receptionist
+# always knows the new location!
+
+# "apiVersion" tells Kubernetes which API this file uses.
+apiVersion: v1
+
+# "kind: Service" means we're creating a networking object.
+kind: Service
+
+# "metadata" gives the Service a name so other resources can refer to it.
+metadata:
+  name: cloud-app-service   # The name of this Service
+  labels:
+    app: cloud-app
+
+# "spec" describes how the Service works.
+spec:
+  # "selector" tells the Service which Pods to send traffic to.
+  # It finds Pods labeled "app: cloud-app" — the same ones in our Deployment!
+  selector:
+    app: cloud-app
+
+  # "ports" defines the port mapping:
+  #   - "port" = the port OUTSIDE the cluster (what users connect to)
+  #   - "targetPort" = the port INSIDE the container (what Nginx listens on)
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80           # External port — visitors connect here
+      targetPort: 80     # Internal port — the container's port
+
+  # "type" controls how the Service is exposed:
+  #   - ClusterIP: Only accessible inside the cluster (default, most secure)
+  #   - NodePort: Accessible from outside on a specific port
+  #   - LoadBalancer: Creates a cloud load balancer (for production use!)
+  #
+  # We use LoadBalancer so the app is reachable from the internet.
+  type: LoadBalancer
