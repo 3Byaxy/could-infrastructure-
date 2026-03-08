@@ -1,0 +1,35 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output
+frontend/build/
+backend/dist/
+
+# Environment files (keep .env.example, ignore .env)
+.env
+backend/.env
+!backend/.env.example
+
+# Terraform state & cache
+terraform/.terraform/
+terraform/.terraform.lock.hcl
+terraform/terraform.tfstate
+terraform/terraform.tfstate.backup
+terraform/*.tfplan
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ansible retry files
+ansible/**/*.retry
+
+# Docker
+*.tar

@@ -1,0 +1,42 @@
+---
+- name: Install kubeadm, kubelet and kubectl
+  ansible.builtin.shell: |
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key \
+      | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] \
+      https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /' \
+      | tee /etc/apt/sources.list.d/kubernetes.list
+    apt-get update
+    apt-get install -y kubelet kubeadm kubectl
+    apt-mark hold kubelet kubeadm kubectl
+  args:
+    creates: /usr/bin/kubeadm
+
+- name: Enable and start kubelet
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: true
+    state: started
+
+- name: Initialise the control plane
+  ansible.builtin.command: >
+    kubeadm init
+    --pod-network-cidr=10.244.0.0/16
+    --apiserver-advertise-address={{ ansible_default_ipv4.address }}
+  args:
+    creates: /etc/kubernetes/admin.conf
+
+- name: Set up kubeconfig for root
+  ansible.builtin.shell: |
+    mkdir -p $HOME/.kube
+    cp /etc/kubernetes/admin.conf $HOME/.kube/config
+    chown $(id -u):$(id -g) $HOME/.kube/config
+  args:
+    creates: /root/.kube/config
+
+- name: Apply Flannel CNI
+  ansible.builtin.command: >
+    kubectl apply -f
+    https://raw.githubusercontent.com/flannel-io/flannel/master/Documentation/kube-flannel.yml
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
