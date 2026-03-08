@@ -1,0 +1,11 @@
+services:
+  webapp:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: cloud-infra-webapp
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=development
+    restart: unless-stopped
