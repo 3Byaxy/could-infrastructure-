@@ -1,0 +1,66 @@
+# =============================================================================
+# File: .github/workflows/terraform-lint.yml
+# Language: YAML — GitHub Actions Workflow
+# What it does: Automatically runs Terraform formatting and validation checks
+#               on every push to the main branch and on pull requests.
+#               This catches mistakes before they reach production.
+# Maintainer: @3Byaxy
+# =============================================================================
+
+name: Terraform Lint & Validate
+
+# Trigger this workflow on pushes to main and on pull requests.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "terraform/**"        # Only run when Terraform files change
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "terraform/**"
+
+# Cancel any previous run of this workflow if a new one is triggered.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  terraform-checks:
+    name: Terraform Format & Validate
+    runs-on: ubuntu-latest   # Run on a fresh Ubuntu virtual machine
+    permissions:
+      contents: read   # Minimum required to check out the repository
+
+    steps:
+      # Step 1: Check out the repository code so the workflow can access it.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install Terraform using the official HashiCorp action.
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.7.0"   # Pin to a specific version for consistency
+
+      # Step 3: Check that all Terraform files follow the standard formatting.
+      # `terraform fmt -check` exits with an error if any file is not formatted.
+      # Developers should run `terraform fmt` locally before committing.
+      - name: Check Terraform formatting (terraform fmt)
+        working-directory: terraform
+        run: terraform fmt -check -recursive
+        continue-on-error: false
+
+      # Step 4: Initialize Terraform (downloads providers, sets up state backend).
+      # We use -backend=false to skip the real backend during CI.
+      - name: Initialize Terraform (terraform init)
+        working-directory: terraform
+        run: terraform init -backend=false
+
+      # Step 5: Validate the Terraform configuration for syntax and internal consistency.
+      # This does NOT connect to AWS — it just checks the code itself.
+      - name: Validate Terraform configuration (terraform validate)
+        working-directory: terraform
+        run: terraform validate

@@ -1,0 +1,62 @@
+# =============================================================================
+# File: .github/workflows/docker-build.yml
+# Language: YAML — GitHub Actions Workflow
+# What it does: Automatically builds the Docker image on every push to main.
+#               This verifies the Dockerfile is valid and the image can be
+#               built successfully before any deployment.
+# Maintainer: @3Byaxy
+# =============================================================================
+
+name: Docker Build
+
+# Trigger this workflow on pushes to main and on pull requests.
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "docker/**"            # Run when Docker files change
+      - ".github/workflows/docker-build.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "docker/**"
+
+# Cancel any previous run if a new one is triggered for the same branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker-build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read   # Minimum required to check out the repository
+
+    steps:
+      # Step 1: Check out the repository so the workflow can read the Dockerfile.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Set up Docker Buildx — an extended build tool that supports
+      # advanced features like multi-platform builds and better caching.
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step 3: Build the Docker image using the Dockerfile in the docker/ folder.
+      # We don't push to a registry here — just verify it builds successfully.
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: docker          # Use the docker/ directory as the build context
+          file: docker/Dockerfile  # Path to the Dockerfile
+          push: false              # Do not push to a registry (build only)
+          tags: cloud-infra:latest
+          cache-from: type=gha    # Use GitHub Actions cache to speed up builds
+          cache-to: type=gha,mode=max
+
+      # Step 4: Verify the Docker image was created by listing it.
+      - name: List built Docker images
+        run: docker images cloud-infra

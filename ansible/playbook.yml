@@ -1,0 +1,81 @@
+# =============================================================================
+# File: ansible/playbook.yml
+# Language: YAML — Ansible Playbook
+# What it does: Automates the setup of a web server by installing and
+#               configuring Nginx on remote hosts (or localhost).
+# Maintainer: @3Byaxy
+# =============================================================================
+
+---
+# A "play" targets a group of hosts and runs a list of tasks on them.
+- name: Configure Web Server with Nginx
+  hosts: webservers          # Matches the group name in inventory.ini
+  become: true               # Run tasks with sudo (administrator) privileges
+  gather_facts: true         # Collect info about the target system automatically
+
+  # Variables used throughout this playbook
+  vars:
+    nginx_port: 80
+    app_name: "cloud-infra"
+    web_root: "/usr/share/nginx/html"
+
+  # ---------------------------------------------------------------------------
+  # PRE-TASKS run before the main tasks — useful for preparation steps.
+  # ---------------------------------------------------------------------------
+  pre_tasks:
+    - name: Update all system packages to the latest version
+      ansible.builtin.package:
+        name: "*"
+        state: latest        # "latest" means upgrade to newest available version
+      when: ansible_os_family == "RedHat" or ansible_os_family == "Debian"
+
+  # ---------------------------------------------------------------------------
+  # TASKS — the main list of actions to perform on each host.
+  # ---------------------------------------------------------------------------
+  tasks:
+    - name: Install Nginx web server
+      ansible.builtin.package:
+        name: nginx
+        state: present       # "present" means install it if it isn't already installed
+
+    - name: Ensure Nginx service is started and enabled on boot
+      ansible.builtin.service:
+        name: nginx
+        state: started       # Make sure Nginx is currently running
+        enabled: true        # Make sure Nginx starts automatically after a reboot
+
+    - name: Deploy custom index.html to the web root
+      ansible.builtin.copy:
+        content: |
+          <!DOCTYPE html>
+          <html>
+            <head><title>{{ app_name }}</title></head>
+            <body>
+              <h1>Welcome to {{ app_name }}!</h1>
+              <p>Deployed by Ansible on {{ ansible_date_time.date }}</p>
+            </body>
+          </html>
+        dest: "{{ web_root }}/index.html"
+        owner: root
+        group: root
+        mode: "0644"         # File permissions: owner can read/write, others read-only
+      notify: Reload Nginx   # Trigger the handler below whenever this task changes
+
+    - name: Ensure firewall allows HTTP traffic (for systems using firewalld)
+      ansible.posix.firewalld:
+        service: http
+        permanent: true
+        state: enabled
+        immediate: true
+      when: ansible_os_family == "RedHat"
+      ignore_errors: true    # Skip gracefully if firewalld is not installed
+
+  # ---------------------------------------------------------------------------
+  # HANDLERS — tasks that only run when notified by another task.
+  # Great for restarting services only when a config actually changed.
+  # ---------------------------------------------------------------------------
+  handlers:
+    - name: Reload Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: reloaded      # Reload config without dropping active connections
