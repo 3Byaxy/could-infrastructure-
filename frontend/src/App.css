@@ -1,0 +1,74 @@
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.App-header {
+  background-color: #1a202c;
+  color: #fff;
+  padding: 2rem;
+  text-align: center;
+}
+
+.App-header h1 {
+  margin: 0 0 0.5rem;
+  font-size: 2rem;
+}
+
+.App-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  color: #a0aec0;
+}
+
+.App-main {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  padding: 2rem;
+  justify-content: center;
+}
+
+.status-card,
+.info-card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 1.5rem;
+  flex: 1 1 320px;
+  max-width: 480px;
+}
+
+.status-card h2,
+.info-card h2 {
+  margin-top: 0;
+  font-size: 1.25rem;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 0.5rem;
+}
+
+.status-text {
+  font-size: 1rem;
+  color: #4a5568;
+}
+
+.api-response {
+  background: #edf2f7;
+  border-radius: 4px;
+  padding: 1rem;
+  font-size: 0.85rem;
+  overflow: auto;
+}
+
+.info-card ul {
+  padding-left: 1.25rem;
+  line-height: 1.8;
+}
+
+.info-card code {
+  background: #edf2f7;
+  border-radius: 3px;
+  padding: 0.1rem 0.3rem;
+  font-size: 0.9rem;
+}
