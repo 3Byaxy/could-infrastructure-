@@ -1,0 +1,80 @@
+# =============================================================================
+# deployment.yaml — Kubernetes Deployment Manifest
+# =============================================================================
+# This manifest creates a Deployment that manages a set of identical Pods
+# running the application container. Adjust the image, replicas, and resource
+# limits to suit your workload.
+#
+# Usage:
+#   kubectl apply -f kubernetes/deployment.yaml
+#   kubectl get deployments
+#   kubectl get pods
+# =============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: cloud-infra-app
+  namespace: default
+  labels:
+    app: cloud-infra-app
+    environment: dev
+
+spec:
+  # Number of identical Pod replicas to run
+  replicas: 2
+
+  # Label selector used to identify Pods managed by this Deployment
+  selector:
+    matchLabels:
+      app: cloud-infra-app
+
+  # Rolling-update strategy: replace Pods one at a time with zero downtime
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1        # Max extra Pods created during an update
+      maxUnavailable: 0  # No Pods may be unavailable during an update
+
+  template:
+    metadata:
+      labels:
+        app: cloud-infra-app
+        environment: dev
+
+    spec:
+      containers:
+        - name: app
+          image: nginx:1.25-alpine  # Replace with your application image
+          imagePullPolicy: IfNotPresent
+
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+
+          # Resource requests and limits help the scheduler place Pods safely
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "250m"
+              memory: "256Mi"
+
+          # Liveness probe: restart the container if this check fails
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+
+          # Readiness probe: send traffic only when this check passes
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10

@@ -1,0 +1,133 @@
+# =============================================================================
+# .gitignore — Cloud Infrastructure Project
+# =============================================================================
+# Covers: Terraform, Ansible, Kubernetes, Docker, Python, Node.js, and general
+# development artefacts that should never be committed to version control.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Terraform
+# -----------------------------------------------------------------------------
+.terraform/                  # Provider plugins and modules downloaded by init
+.terraform.lock.hcl          # Lock file (commit this if you want reproducible builds)
+*.tfstate                    # Terraform state files — contain sensitive data
+*.tfstate.backup             # Backup state files
+*.tfplan                     # Saved plan files
+*.tfvars                     # Variable files that may contain secrets
+!example.tfvars              # Allow example variable files to be committed
+override.tf                  # Local override files
+override.tf.json
+*_override.tf
+*_override.tf.json
+crash.log                    # Terraform crash logs
+crash.*.log
+
+# -----------------------------------------------------------------------------
+# Ansible
+# -----------------------------------------------------------------------------
+*.retry                      # Ansible retry files created on failed playbook runs
+.vault_pass                  # Ansible Vault password file
+inventory/                   # Dynamic inventory files (if generated)
+roles/*/files/secret*        # Secret files inside roles
+
+# -----------------------------------------------------------------------------
+# Docker
+# -----------------------------------------------------------------------------
+.dockerignore                # Not ignored, but listed here for awareness
+docker-compose.override.yml  # Local override compose file
+
+# -----------------------------------------------------------------------------
+# Kubernetes / Helm
+# -----------------------------------------------------------------------------
+kubeconfig                   # Kubernetes config file — contains credentials
+*.kubeconfig
+charts/*/charts/             # Helm sub-chart downloads
+charts/*/tmpcharts/
+
+# -----------------------------------------------------------------------------
+# Environment and secrets
+# -----------------------------------------------------------------------------
+.env                         # Environment variable files
+.env.*                       # .env.local, .env.production, etc.
+!.env.example                # Allow the example env file
+secrets/                     # Any secrets directory
+*.pem                        # Private keys
+*.key
+*.p12
+*.pfx
+credentials                  # AWS/cloud credential files
+.aws/credentials
+
+# -----------------------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+
+# -----------------------------------------------------------------------------
+# Node.js
+# -----------------------------------------------------------------------------
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+package-lock.json            # Uncomment if you prefer not to commit lock files
+# yarn.lock
+
+# -----------------------------------------------------------------------------
+# Logs
+# -----------------------------------------------------------------------------
+*.log
+logs/
+*.out
+
+# -----------------------------------------------------------------------------
+# Operating system artefacts
+# -----------------------------------------------------------------------------
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# -----------------------------------------------------------------------------
+# IDE and editor files
+# -----------------------------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+.editorconfig
+
+# -----------------------------------------------------------------------------
+# Miscellaneous
+# -----------------------------------------------------------------------------
+tmp/
+temp/
+*.tmp
+*.bak
+*.orig

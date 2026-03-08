@@ -1,0 +1,36 @@
+# =============================================================================
+# service.yaml — Kubernetes Service Manifest
+# =============================================================================
+# This manifest exposes the Deployment Pods as a network service.
+# Change the type to LoadBalancer (cloud) or NodePort (on-prem) as required.
+#
+# Usage:
+#   kubectl apply -f kubernetes/service.yaml
+#   kubectl get services
+# =============================================================================
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: cloud-infra-service
+  namespace: default
+  labels:
+    app: cloud-infra-app
+    environment: dev
+
+spec:
+  # ClusterIP — internal only (default)
+  # NodePort  — exposed on each Node's IP at a static port
+  # LoadBalancer — provisions an external load balancer (cloud providers)
+  type: ClusterIP
+
+  # Route traffic to Pods that match these labels (must match deployment.yaml)
+  selector:
+    app: cloud-infra-app
+
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80         # Port exposed by the Service
+      targetPort: http # Named port on the container (containerPort name)
