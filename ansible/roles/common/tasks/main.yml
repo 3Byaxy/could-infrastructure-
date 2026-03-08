@@ -1,0 +1,50 @@
+---
+- name: Update all packages
+  ansible.builtin.package:
+    name: "*"
+    state: latest
+
+- name: Install common packages
+  ansible.builtin.package:
+    name:
+      - curl
+      - wget
+      - git
+      - vim
+      - htop
+      - unzip
+      - net-tools
+      - python3-pip
+    state: present
+
+- name: Set timezone to UTC
+  community.general.timezone:
+    name: UTC
+
+- name: Configure sysctl for security
+  ansible.posix.sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    sysctl_set: true
+    state: present
+    reload: true
+  loop:
+    - { name: "net.ipv4.ip_forward", value: "1" }
+    - { name: "net.ipv4.conf.all.rp_filter", value: "1" }
+    - { name: "net.ipv4.tcp_syncookies", value: "1" }
+
+- name: Disable root SSH login
+  ansible.builtin.lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PermitRootLogin'
+    line: 'PermitRootLogin no'
+    state: present
+  notify: Restart sshd
+
+- name: Create deploy user
+  ansible.builtin.user:
+    name: deploy
+    groups: sudo
+    shell: /bin/bash
+    create_home: true
+    state: present
