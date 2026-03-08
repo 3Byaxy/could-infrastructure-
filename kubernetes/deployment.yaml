@@ -1,0 +1,82 @@
+# =============================================================================
+# File: kubernetes/deployment.yaml
+# Language: YAML — Kubernetes Manifest
+# What it does: Deploys an Nginx web application with 2 replicas (copies)
+#               to a Kubernetes cluster. Includes resource limits and
+#               health checks to keep the app running reliably.
+# Maintainer: @3Byaxy
+# =============================================================================
+
+apiVersion: apps/v1       # The Kubernetes API version to use
+kind: Deployment          # We are creating a Deployment (manages running pods)
+metadata:
+  name: nginx-deployment  # The name of this deployment
+  namespace: default      # The Kubernetes namespace to deploy into
+  labels:
+    app: nginx
+    environment: production
+    managed-by: kubernetes
+
+spec:
+  # Run 2 identical copies (replicas) of the pod for high availability.
+  # If one pod crashes, the other keeps serving traffic.
+  replicas: 2
+
+  # The selector tells Kubernetes which pods this deployment manages.
+  selector:
+    matchLabels:
+      app: nginx
+
+  # Rolling update strategy: update pods one at a time to avoid downtime.
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1           # Allow 1 extra pod during an update
+      maxUnavailable: 0     # Never have fewer than the desired number of pods
+
+  # Template describes the pod that will be created.
+  template:
+    metadata:
+      labels:
+        app: nginx          # Must match the selector above
+
+    spec:
+      containers:
+        - name: nginx
+          image: nginx:alpine   # Use the lightweight Alpine-based Nginx image
+          ports:
+            - containerPort: 80 # The port the app listens on inside the container
+
+          # Resource limits prevent one container from using too many resources.
+          resources:
+            requests:           # Minimum resources needed to schedule the pod
+              memory: "64Mi"    # 64 megabytes of RAM
+              cpu: "100m"       # 100 millicores = 0.1 CPU core
+            limits:             # Maximum resources the container is allowed to use
+              memory: "128Mi"
+              cpu: "250m"
+
+          # Liveness probe: Kubernetes restarts the container if this check fails.
+          # It checks that the Nginx main process is still responding on port 80.
+          livenessProbe:
+            httpGet:
+              path: /           # Send an HTTP GET request to /
+              port: 80
+            initialDelaySeconds: 10   # Wait 10 seconds before the first check
+            periodSeconds: 15         # Check every 15 seconds
+
+          # Readiness probe: Kubernetes only sends traffic to the pod when this
+          # check passes. It ensures the app is fully started before it gets requests.
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          # Environment variables available inside the container
+          env:
+            - name: NGINX_HOST
+              value: "localhost"
+            - name: NGINX_PORT
+              value: "80"

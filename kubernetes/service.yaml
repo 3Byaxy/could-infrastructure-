@@ -1,0 +1,32 @@
+# =============================================================================
+# File: kubernetes/service.yaml
+# Language: YAML — Kubernetes Manifest
+# What it does: Exposes the Nginx deployment to the internet by creating a
+#               LoadBalancer service that listens on port 80.
+# Maintainer: @3Byaxy
+# =============================================================================
+
+apiVersion: v1        # The Kubernetes API version for core objects like Service
+kind: Service         # We are creating a Service (network access to pods)
+metadata:
+  name: nginx-service # The name of this service
+  namespace: default
+  labels:
+    app: nginx
+    managed-by: kubernetes
+
+spec:
+  # LoadBalancer type creates an external load balancer in the cloud provider
+  # (e.g., AWS ELB, GCP Load Balancer) and gives you a public IP address.
+  type: LoadBalancer
+
+  # This selector connects the service to all pods labeled "app: nginx".
+  # Traffic sent to this service will be distributed across those pods.
+  selector:
+    app: nginx
+
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80           # The port exposed externally (visitors connect here)
+      targetPort: 80     # The port on the pod to forward traffic to

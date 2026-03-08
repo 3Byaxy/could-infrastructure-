@@ -1,0 +1,88 @@
+# =============================================================================
+# File: docker/docker-compose.yml
+# Language: YAML — Docker Compose
+# What it does: Defines and runs a multi-container application with an Nginx
+#               web server and a PostgreSQL database, connected via a shared
+#               network, with data persisted using Docker volumes.
+# Maintainer: @3Byaxy
+# =============================================================================
+
+version: "3.9"   # Docker Compose file format version
+
+# ---------------------------------------------------------------------------
+# SERVICES — each service is a container that Docker Compose will manage.
+# ---------------------------------------------------------------------------
+services:
+
+  # --------------------------------------------------------------------------
+  # web — The Nginx front-end web server
+  # Serves static HTML files and can act as a reverse proxy to other services.
+  # --------------------------------------------------------------------------
+  web:
+    build:
+      context: .           # Build the image using the Dockerfile in this directory
+      dockerfile: Dockerfile
+    container_name: cloud-infra-web
+    restart: unless-stopped  # Automatically restart if the container crashes
+    ports:
+      - "80:80"            # Map host port 80 to container port 80
+    volumes:
+      # Mount a local directory into the container so changes are live.
+      - ./html:/usr/share/nginx/html:ro   # :ro = read-only inside the container
+    environment:
+      - NGINX_HOST=localhost
+      - NGINX_PORT=80
+    networks:
+      - app-network        # Connect to the shared network defined below
+    depends_on:
+      db:
+        condition: service_healthy   # Wait until the database is ready before starting
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  # --------------------------------------------------------------------------
+  # db — The PostgreSQL database server
+  # Stores application data persistently using a named Docker volume.
+  # --------------------------------------------------------------------------
+  db:
+    image: postgres:15-alpine    # Official PostgreSQL image, Alpine variant (small)
+    container_name: cloud-infra-db
+    restart: unless-stopped
+    environment:
+      # These environment variables configure the PostgreSQL database.
+      # In production, use Docker secrets or a .env file instead of plain text!
+      POSTGRES_DB: cloudinfra         # Name of the database to create
+      POSTGRES_USER: appuser          # Database user
+      POSTGRES_PASSWORD: changeme123  # Database password — CHANGE THIS in production!
+    volumes:
+      # Named volume: Docker manages the storage location for you.
+      # Data persists even if the container is removed and recreated.
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      # Use pg_isready to check that PostgreSQL is accepting connections.
+      test: ["CMD-SHELL", "pg_isready -U appuser -d cloudinfra"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+# ---------------------------------------------------------------------------
+# VOLUMES — persistent storage that survives container restarts and removals.
+# ---------------------------------------------------------------------------
+volumes:
+  db-data:
+    driver: local   # Store volume data on the local machine
+
+# ---------------------------------------------------------------------------
+# NETWORKS — Docker virtual networks that allow containers to talk to each other.
+# Using a custom network (instead of the default) gives you better control.
+# ---------------------------------------------------------------------------
+networks:
+  app-network:
+    driver: bridge   # Bridge network: containers on the same host can communicate
