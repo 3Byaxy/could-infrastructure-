@@ -1,0 +1,25 @@
+---
+- name: Install kubeadm, kubelet and kubectl
+  ansible.builtin.shell: |
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key \
+      | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] \
+      https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /' \
+      | tee /etc/apt/sources.list.d/kubernetes.list
+    apt-get update
+    apt-get install -y kubelet kubeadm kubectl
+    apt-mark hold kubelet kubeadm kubectl
+  args:
+    creates: /usr/bin/kubeadm
+
+- name: Enable and start kubelet
+  ansible.builtin.systemd:
+    name: kubelet
+    enabled: true
+    state: started
+
+- name: Join the cluster
+  ansible.builtin.command: "{{ k8s_join_command }}"
+  args:
+    creates: /etc/kubernetes/kubelet.conf
+  when: k8s_join_command is defined

@@ -1,0 +1,27 @@
+---
+- name: Install base packages
+  ansible.builtin.package:
+    name:
+      - curl
+      - wget
+      - git
+      - vim
+      - htop
+      - unzip
+      - net-tools
+      - ca-certificates
+    state: present
+
+- name: Set timezone to UTC
+  community.general.timezone:
+    name: UTC
+
+- name: Configure system limits
+  ansible.builtin.copy:
+    dest: /etc/security/limits.d/99-cloud-infra.conf
+    content: |
+      * soft nofile 65536
+      * hard nofile 65536
+      * soft nproc 65536
+      * hard nproc 65536
+    mode: "0644"

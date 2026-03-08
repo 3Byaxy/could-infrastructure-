@@ -1,0 +1,24 @@
+---
+- name: Configure all servers
+  hosts: all
+  become: true
+  roles:
+    - common
+
+- name: Configure web servers
+  hosts: webservers
+  become: true
+  roles:
+    - webserver
+
+- name: Configure Kubernetes masters
+  hosts: k8s_masters
+  become: true
+  roles:
+    - k8s_master
+
+- name: Configure Kubernetes workers
+  hosts: k8s_workers
+  become: true
+  roles:
+    - k8s_worker
