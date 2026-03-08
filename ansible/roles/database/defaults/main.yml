@@ -1,0 +1,8 @@
+---
+# ansible/roles/database/defaults/main.yml
+
+db_name: appdb
+db_username: appuser
+# IMPORTANT: Override db_password via Ansible Vault or --extra-vars in all environments.
+# Never leave this as the placeholder value.
+db_password: "REPLACE_ME_WITH_VAULT"

@@ -1,0 +1,40 @@
+---
+# ansible/roles/common/tasks/main.yml
+
+- name: Update apt cache
+  apt:
+    update_cache: true
+    cache_valid_time: 3600
+
+- name: Install common packages
+  apt:
+    name:
+      - curl
+      - wget
+      - git
+      - vim
+      - htop
+      - unzip
+      - ca-certificates
+      - gnupg
+    state: present
+
+- name: Set timezone
+  timezone:
+    name: UTC
+
+- name: Configure system-wide environment
+  lineinfile:
+    dest: /etc/environment
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+  with_items:
+    - { key: "LANG", value: "en_US.UTF-8" }
+    - { key: "LC_ALL", value: "en_US.UTF-8" }
+
+- name: Ensure journald log storage is persistent
+  lineinfile:
+    path: /etc/systemd/journald.conf
+    regexp: "^#?Storage="
+    line: "Storage=persistent"
+  notify: Restart journald
