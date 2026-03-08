@@ -1,0 +1,47 @@
+---
+- name: Deploy application to app servers
+  hosts: appservers
+  become: true
+  vars:
+    app_image: "{{ lookup('env', 'APP_IMAGE') | default('cloud-infra/backend:latest') }}"
+    frontend_image: "{{ lookup('env', 'FRONTEND_IMAGE') | default('cloud-infra/frontend:latest') }}"
+    deploy_env: "{{ lookup('env', 'DEPLOY_ENV') | default('dev') }}"
+
+  tasks:
+    - name: Pull backend Docker image
+      community.docker.docker_image:
+        name: "{{ app_image }}"
+        source: pull
+
+    - name: Pull frontend Docker image
+      community.docker.docker_image:
+        name: "{{ frontend_image }}"
+        source: pull
+
+    - name: Stop existing containers
+      community.docker.docker_compose_v2:
+        project_src: /opt/cloud-infra
+        state: absent
+      ignore_errors: true
+
+    - name: Copy docker-compose file
+      ansible.builtin.template:
+        src: templates/docker-compose.yml.j2
+        dest: /opt/cloud-infra/docker-compose.yml
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Start application containers
+      community.docker.docker_compose_v2:
+        project_src: /opt/cloud-infra
+        state: present
+
+    - name: Wait for backend health check
+      ansible.builtin.uri:
+        url: "http://localhost:5000/health"
+        status_code: 200
+      register: health_check
+      until: health_check.status == 200
+      retries: 10
+      delay: 5
