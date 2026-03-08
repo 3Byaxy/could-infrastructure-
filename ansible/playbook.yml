@@ -1,0 +1,59 @@
+---
+# =============================================================================
+# playbook.yml — Sample Ansible Playbook
+# =============================================================================
+# This playbook demonstrates a simple connectivity check (ping) and a basic
+# package installation. Adapt the hosts, vars, and tasks for your environment.
+#
+# Usage:
+#   ansible-playbook -i <inventory_file> playbook.yml
+# =============================================================================
+
+- name: Cloud Infrastructure Setup
+  hosts: all          # Target all hosts in your inventory; change as needed
+  become: true        # Run tasks with sudo/root privileges
+  gather_facts: true  # Collect system facts before running tasks
+
+  vars:
+    # List of packages to install on the target hosts
+    required_packages:
+      - curl
+      - git
+      - vim
+      - unzip
+
+  tasks:
+    # -------------------------------------------------------------------------
+    # Connectivity check
+    # -------------------------------------------------------------------------
+    - name: Ping all hosts to verify connectivity
+      ansible.builtin.ping:
+
+    # -------------------------------------------------------------------------
+    # System update
+    # -------------------------------------------------------------------------
+    - name: Update apt package cache (Debian/Ubuntu)
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600  # Only update if cache is older than 1 hour
+      when: ansible_os_family == "Debian"
+
+    - name: Update yum package cache (RedHat/CentOS)
+      ansible.builtin.yum:
+        update_cache: true
+      when: ansible_os_family == "RedHat"
+
+    # -------------------------------------------------------------------------
+    # Package installation
+    # -------------------------------------------------------------------------
+    - name: Install required packages
+      ansible.builtin.package:
+        name: "{{ required_packages }}"
+        state: present
+
+    # -------------------------------------------------------------------------
+    # Print a success message
+    # -------------------------------------------------------------------------
+    - name: Print setup complete message
+      ansible.builtin.debug:
+        msg: "✅ Host {{ inventory_hostname }} is configured and ready."

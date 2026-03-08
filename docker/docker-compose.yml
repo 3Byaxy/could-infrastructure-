@@ -1,0 +1,70 @@
+# =============================================================================
+# docker-compose.yml — Multi-Container Application Stack
+# =============================================================================
+# Defines the services, networks, and volumes for local development and
+# single-host deployments.
+#
+# Usage:
+#   docker-compose up -d        # Start all services in the background
+#   docker-compose logs -f      # Stream logs from all services
+#   docker-compose down         # Stop and remove containers/networks
+#   docker-compose down -v      # Also remove named volumes
+# =============================================================================
+
+version: "3.9"
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Web / application service
+  # ---------------------------------------------------------------------------
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: cloud-infra-app:latest
+    container_name: cloud-infra-app
+    restart: unless-stopped
+    ports:
+      - "8080:80"   # Map host port 8080 → container port 80
+    environment:
+      - NODE_ENV=production
+      - APP_PORT=80
+    networks:
+      - cloud-infra-net
+    depends_on:
+      - db
+
+  # ---------------------------------------------------------------------------
+  # Database service (PostgreSQL example)
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: cloud-infra-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-appuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}
+      POSTGRES_DB: ${DB_NAME:-appdb}
+    volumes:
+      - db-data:/var/lib/postgresql/data  # Persist database files
+    networks:
+      - cloud-infra-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-appuser}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# -----------------------------------------------------------------------------
+# Named volumes — data persisted independently of containers
+# -----------------------------------------------------------------------------
+volumes:
+  db-data:
+
+# -----------------------------------------------------------------------------
+# Networks — isolated bridge network for inter-service communication
+# -----------------------------------------------------------------------------
+networks:
+  cloud-infra-net:
+    driver: bridge
