@@ -1,0 +1,101 @@
+---
+# =============================================================================
+# Cloud Infrastructure - Kubernetes Deployment
+# =============================================================================
+# A Deployment manages a set of identical Pods (containers).
+# Kubernetes ensures the desired number of replicas are always running.
+#
+# BEGINNER TIP: Pods are the smallest deployable unit in Kubernetes.
+# A Deployment makes sure your Pods are always healthy and up-to-date.
+# =============================================================================
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-app
+  namespace: default
+  labels:
+    app: web-app
+    version: "1.0"
+    managed-by: kubernetes
+spec:
+  # How many copies of the Pod to run
+  replicas: 2
+
+  # Which Pods this Deployment manages (must match template labels)
+  selector:
+    matchLabels:
+      app: web-app
+
+  # Rolling update strategy — updates Pods one at a time, no downtime!
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
+  template:
+    metadata:
+      labels:
+        app: web-app
+        version: "1.0"
+
+    spec:
+      containers:
+        - name: web-app
+          image: nginx:1.25-alpine  # Lightweight Nginx image
+          ports:
+            - containerPort: 80
+              name: http
+
+          # Resource limits — be a good neighbour on shared clusters!
+          resources:
+            requests:
+              cpu: "100m"      # 0.1 CPU cores
+              memory: "64Mi"   # 64 megabytes
+            limits:
+              cpu: "250m"      # 0.25 CPU cores
+              memory: "128Mi"  # 128 megabytes
+
+          # Health checks — Kubernetes will restart unhealthy containers
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 20
+
+          # Load config from a ConfigMap
+          envFrom:
+            - configMapRef:
+                name: web-app-config
+
+      # Spread Pods across different nodes for resilience
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: web-app
+
+---
+# =============================================================================
+# ConfigMap - store non-sensitive configuration
+# =============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: web-app-config
+  namespace: default
+data:
+  APP_NAME: "cloud-infra-app"
+  APP_ENV: "production"
+  LOG_LEVEL: "info"
