@@ -1,0 +1,66 @@
+{
+  "name": "Cloud Infrastructure Dev Environment",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+
+  "features": {
+    "ghcr.io/devcontainers/features/terraform:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.11"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/ansible:2": {}
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "hashicorp.terraform",
+        "redhat.ansible",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "ms-azuretools.vscode-docker",
+        "ms-python.python",
+        "ms-python.pylint",
+        "timonwong.shellcheck",
+        "foxundermoon.shell-format",
+        "github.copilot"
+      ],
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.tabSize": 2,
+        "files.trimTrailingWhitespace": true,
+        "python.defaultInterpreterPath": "/usr/local/bin/python3",
+        "[terraform]": {
+          "editor.defaultFormatter": "hashicorp.terraform"
+        }
+      }
+    }
+  },
+
+  "postCreateCommand": "pip install -r python/requirements.txt 2>/dev/null || true && echo '✅ Cloud Infrastructure environment ready! Happy learning! ☁️'",
+
+  "remoteUser": "vscode",
+
+  "forwardPorts": [8080, 8443, 3000],
+
+  "portsAttributes": {
+    "8080": {
+      "label": "Web App",
+      "onAutoForward": "notify"
+    },
+    "8443": {
+      "label": "Web App (HTTPS)",
+      "onAutoForward": "notify"
+    },
+    "3000": {
+      "label": "Dev Server",
+      "onAutoForward": "notify"
+    }
+  }
+}

@@ -1,0 +1,169 @@
+---
+# =============================================================================
+# Cloud Infrastructure - Ansible Playbook
+# =============================================================================
+# Ansible automates server configuration. This playbook sets up a basic
+# web server with Nginx, a firewall, and a simple health-check page.
+#
+# BEGINNER TIP: Read each task — they run in order from top to bottom.
+# =============================================================================
+
+- name: Configure web server
+  hosts: webservers
+  become: true  # Run tasks as root (like sudo)
+  vars:
+    app_port: 80
+    app_name: "cloud-infra-app"
+    nginx_root: /var/www/html
+
+  tasks:
+
+    # -------------------------------------------------------------------------
+    # 1. Update system packages
+    # -------------------------------------------------------------------------
+    - name: Update apt package cache
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600  # Only update if cache is older than 1 hour
+      when: ansible_os_family == "Debian"
+
+    - name: Update yum package cache
+      ansible.builtin.yum:
+        update_cache: true
+      when: ansible_os_family == "RedHat"
+
+    # -------------------------------------------------------------------------
+    # 2. Install required packages
+    # -------------------------------------------------------------------------
+    - name: Install Nginx (Debian/Ubuntu)
+      ansible.builtin.apt:
+        name:
+          - nginx
+          - curl
+          - ufw
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: Install Nginx (RedHat/CentOS/Amazon Linux)
+      ansible.builtin.yum:
+        name:
+          - nginx
+          - curl
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    # -------------------------------------------------------------------------
+    # 3. Configure firewall
+    # -------------------------------------------------------------------------
+    - name: Allow HTTP through firewall
+      community.general.ufw:
+        rule: allow
+        port: "80"
+        proto: tcp
+      when: ansible_os_family == "Debian"
+
+    - name: Allow HTTPS through firewall
+      community.general.ufw:
+        rule: allow
+        port: "443"
+        proto: tcp
+      when: ansible_os_family == "Debian"
+
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
+        policy: deny
+        direction: incoming
+      when: ansible_os_family == "Debian"
+
+    # -------------------------------------------------------------------------
+    # 4. Deploy web content
+    # -------------------------------------------------------------------------
+    - name: Ensure web root directory exists
+      ansible.builtin.file:
+        path: "{{ nginx_root }}"
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0755"
+      when: ansible_os_family == "Debian"
+
+    - name: Deploy index page
+      ansible.builtin.copy:
+        dest: "{{ nginx_root }}/index.html"
+        content: |
+          <!DOCTYPE html>
+          <html lang="en">
+          <head>
+            <meta charset="UTF-8">
+            <title>{{ app_name }}</title>
+            <style>
+              body { font-family: Arial, sans-serif; text-align: center; padding: 50px; background: #f0f4f8; }
+              h1 { color: #2d3748; }
+              p { color: #718096; }
+            </style>
+          </head>
+          <body>
+            <h1>☁️ {{ app_name }}</h1>
+            <p>Deployed with Ansible on {{ ansible_hostname }} 🚀</p>
+            <p>Server time: {{ ansible_date_time.iso8601 }}</p>
+          </body>
+          </html>
+        owner: www-data
+        group: www-data
+        mode: "0644"
+      notify: Restart Nginx
+
+    # -------------------------------------------------------------------------
+    # 5. Configure Nginx
+    # -------------------------------------------------------------------------
+    - name: Create Nginx virtual host config
+      ansible.builtin.template:
+        src: templates/nginx.conf.j2
+        dest: /etc/nginx/sites-available/{{ app_name }}
+        owner: root
+        group: root
+        mode: "0644"
+      when: ansible_os_family == "Debian"
+      notify: Restart Nginx
+
+    - name: Enable Nginx virtual host
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/{{ app_name }}
+        dest: /etc/nginx/sites-enabled/{{ app_name }}
+        state: link
+      when: ansible_os_family == "Debian"
+      notify: Restart Nginx
+
+    # -------------------------------------------------------------------------
+    # 6. Start and enable Nginx
+    # -------------------------------------------------------------------------
+    - name: Ensure Nginx is started and enabled
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: true
+
+    # -------------------------------------------------------------------------
+    # 7. Health check
+    # -------------------------------------------------------------------------
+    - name: Verify Nginx is responding
+      ansible.builtin.uri:
+        url: "http://localhost:{{ app_port }}"
+        status_code: 200
+      register: health_check
+      retries: 3
+      delay: 5
+
+    - name: Show health check result
+      ansible.builtin.debug:
+        msg: "✅ Web server is healthy! Status: {{ health_check.status }}"
+
+  # ---------------------------------------------------------------------------
+  # Handlers: run only when notified (e.g., after config changes)
+  # ---------------------------------------------------------------------------
+  handlers:
+    - name: Restart Nginx
+      ansible.builtin.service:
+        name: nginx
+        state: restarted

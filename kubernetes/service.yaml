@@ -1,0 +1,62 @@
+---
+# =============================================================================
+# Cloud Infrastructure - Kubernetes Service
+# =============================================================================
+# A Service exposes your Pods to traffic — either inside the cluster
+# or to the outside world.
+#
+# BEGINNER TIP: Pods come and go (they are ephemeral). A Service provides
+# a stable DNS name and IP address to reach your Pods.
+# =============================================================================
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-app-service
+  namespace: default
+  labels:
+    app: web-app
+spec:
+  # Select which Pods to route traffic to
+  selector:
+    app: web-app
+
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80         # Port exposed by the Service
+      targetPort: 80   # Port on the Pod
+
+  # Service type controls how the Service is exposed:
+  # - ClusterIP  : Only accessible inside the cluster (default)
+  # - NodePort   : Accessible on each node's IP at a static port
+  # - LoadBalancer: Creates an external load balancer (cloud only)
+  type: ClusterIP
+
+---
+# =============================================================================
+# Ingress - route external HTTP/S traffic to Services
+# =============================================================================
+# Requires an Ingress Controller (e.g., nginx-ingress) to be installed.
+# Uncomment and configure if you have one available.
+# =============================================================================
+
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: web-app-ingress
+#   namespace: default
+#   annotations:
+#     nginx.ingress.kubernetes.io/rewrite-target: /
+# spec:
+#   rules:
+#     - host: my-app.example.com
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: web-app-service
+#                 port:
+#                   number: 80

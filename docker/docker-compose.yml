@@ -1,0 +1,94 @@
+# =============================================================================
+# Cloud Infrastructure - Docker Compose
+# =============================================================================
+# Docker Compose lets you define and run multi-container applications.
+# This file sets up a web app + reverse proxy + a simple database.
+#
+# BEGINNER TIP: Run `docker compose up` to start everything at once!
+# =============================================================================
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Web Application
+  # ---------------------------------------------------------------------------
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cloud-infra-web
+    restart: unless-stopped
+    ports:
+      - "8080:80"   # host:container — access at http://localhost:8080
+    environment:
+      - APP_ENV=development
+      - APP_NAME=cloud-infra-app
+    volumes:
+      - ./html:/usr/share/nginx/html:ro   # Mount local html folder (read-only)
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  # ---------------------------------------------------------------------------
+  # Database (PostgreSQL)
+  # ---------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: cloud-infra-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: appdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-changeme}   # Set DB_PASSWORD in .env file!
+    volumes:
+      - db-data:/var/lib/postgresql/data   # Persist data between restarts
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U appuser -d appdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    # Don't expose the database port externally in production!
+    # ports:
+    #   - "5432:5432"
+
+  # ---------------------------------------------------------------------------
+  # Database Admin UI (pgAdmin) — useful for learning/development only
+  # ---------------------------------------------------------------------------
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: cloud-infra-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-changeme}
+    ports:
+      - "5050:80"   # Access pgAdmin at http://localhost:5050
+    depends_on:
+      - db
+    networks:
+      - app-network
+    profiles:
+      - dev   # Only starts when you run: docker compose --profile dev up
+
+# =============================================================================
+# Networks — containers on the same network can communicate by service name
+# =============================================================================
+networks:
+  app-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes — persist data between container restarts
+# =============================================================================
+volumes:
+  db-data:
+    driver: local

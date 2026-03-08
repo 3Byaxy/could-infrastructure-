@@ -1,0 +1,20 @@
+# Python dependencies for the cloud infrastructure project
+# Install with: pip install -r requirements.txt
+
+# HTTP requests (used by health_check.py)
+requests>=2.31.0
+
+# AWS SDK — uncomment to use boto3 for AWS automation
+# boto3>=1.34.0
+
+# Kubernetes Python client — uncomment for K8s automation
+# kubernetes>=29.0.0
+
+# YAML parsing
+PyYAML>=6.0.1
+
+# Rich terminal output (beautiful CLI formatting)
+rich>=13.7.0
+
+# Environment variable management
+python-dotenv>=1.0.0
