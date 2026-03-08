@@ -1,0 +1,50 @@
+{
+  // 🏗️ This file tells GitHub Codespaces how to set up your development environment.
+  // When you open this project in a Codespace, everything gets installed automatically!
+
+  "name": "Cloud Infrastructure Dev Environment",
+
+  // 🐳 We use a Dockerfile to build the container image for this environment.
+  // Think of it like a recipe for making the perfect kitchen to cook our code in!
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+
+  // 📁 This is the folder that will be opened when the Codespace starts.
+  "workspaceFolder": "/workspaces/could-infrastructure-",
+
+  // 🔌 These are VSCode extensions that will be installed automatically.
+  // Extensions are like superpowers for your code editor!
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "hashicorp.terraform",             // 🏗️ Helps write Terraform code
+        "ms-azuretools.vscode-docker",     // 🐳 Helps work with Docker
+        "redhat.ansible",                  // ⚙️ Helps write Ansible playbooks
+        "ms-kubernetes-tools.vscode-kubernetes-tools", // ☸️ Helps manage Kubernetes
+        "github.copilot"                   // 🤖 AI coding assistant
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "editor.formatOnSave": true
+      }
+    }
+  },
+
+  // 🚀 This command runs AFTER the Codespace is created.
+  // It calls our setup script to install all the cloud tools we need!
+  "postCreateCommand": "bash scripts/setup.sh",
+
+  // 🔓 These features add extra tools to our container.
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/git:1": {}
+  },
+
+  // 🔄 Forward port 8080 so you can preview web apps from the Codespace.
+  "forwardPorts": [8080],
+
+  // 👤 Run the container as the "vscode" user for safety.
+  "remoteUser": "vscode"
+}

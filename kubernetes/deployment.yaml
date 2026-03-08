@@ -1,0 +1,89 @@
+---
+# ☸️ KUBERNETES DEPLOYMENT
+#
+# Kubernetes (K8s) is a system that manages containerized applications.
+# A "Deployment" tells Kubernetes how to run your app and keep it healthy.
+#
+# 💡 Analogy: Kubernetes is like a restaurant manager — it makes sure
+# the right number of chefs (containers) are always working, and replaces
+# anyone who calls in sick (crashes)!
+
+# "apiVersion" tells Kubernetes which API version this file uses.
+apiVersion: apps/v1
+
+# "kind" tells Kubernetes what type of object we're creating.
+# A Deployment manages running multiple copies of our app.
+kind: Deployment
+
+# "metadata" gives our Deployment a name and labels.
+# Labels are like tags — they help Kubernetes find and group things.
+metadata:
+  name: cloud-app-deployment   # The name of this Deployment
+  labels:
+    app: cloud-app             # A label so Kubernetes can identify our app
+    version: "1.0"
+
+# "spec" is where we describe HOW the Deployment should work.
+spec:
+  # "replicas" = how many copies of our app to run at the same time.
+  # 2 replicas means if one crashes, the other keeps serving users!
+  replicas: 2
+
+  # "selector" tells the Deployment which Pods belong to it.
+  # It looks for Pods with the label "app: cloud-app".
+  selector:
+    matchLabels:
+      app: cloud-app
+
+  # "template" describes the Pod (the actual running container).
+  # Every replica uses this same template.
+  template:
+    metadata:
+      labels:
+        app: cloud-app   # This label must match the selector above!
+
+    spec:
+      # "containers" lists the Docker containers to run inside this Pod.
+      # A Pod can have multiple containers, but usually has just one.
+      containers:
+        - name: cloud-app-container     # A name for the container
+
+          # The Docker image to use — pulled from Docker Hub.
+          # nginx:alpine is a tiny, fast web server image.
+          image: nginx:alpine
+
+          # "ports" lists the ports the container listens on.
+          # Port 80 is the standard HTTP port (websites!).
+          ports:
+            - containerPort: 80
+              protocol: TCP
+
+          # "resources" limits how much CPU and memory the container can use.
+          # This prevents one app from hogging all the server's resources!
+          resources:
+            requests:
+              # "requests" = the minimum amount the container needs to start.
+              memory: "64Mi"    # 64 megabytes of RAM
+              cpu: "100m"       # 100 millicores = 0.1 CPU cores
+            limits:
+              # "limits" = the maximum the container is allowed to use.
+              memory: "128Mi"
+              cpu: "200m"
+
+          # "livenessProbe" checks if the container is still alive.
+          # If it fails too many times, Kubernetes restarts the container.
+          livenessProbe:
+            httpGet:
+              path: /          # Check the homepage
+              port: 80
+            initialDelaySeconds: 10   # Wait 10 seconds before first check
+            periodSeconds: 30         # Check every 30 seconds
+
+          # "readinessProbe" checks if the container is ready to receive traffic.
+          # Kubernetes won't send users to a container that isn't ready!
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 10

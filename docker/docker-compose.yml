@@ -1,0 +1,102 @@
+# 🐳 DOCKER COMPOSE FILE
+#
+# Docker Compose lets you run MULTIPLE containers together as one application.
+# Instead of starting each container with long `docker run` commands,
+# you describe everything here and start it all with `docker compose up`!
+#
+# 💡 Analogy: If Docker is a lunchbox, Docker Compose is a full meal tray —
+# it holds all the separate dishes (containers) your app needs to work together!
+
+# The version of Docker Compose file format we're using.
+version: "3.9"
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# SERVICES — Each service is a container that runs as part of our app.
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+services:
+
+  # ── Service 1: The Web Application ──────────────────────────
+  web:
+    # "build" tells Compose to build the image using our Dockerfile.
+    # "context: ." means use the current directory as the build context.
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    # "container_name" gives the container a friendly name.
+    container_name: cloud-app-web
+
+    # "ports" maps ports between your computer and the container.
+    # Format: "HOST_PORT:CONTAINER_PORT"
+    # So visiting http://localhost:8080 connects to port 8080 inside the container.
+    ports:
+      - "8080:8080"
+
+    # "environment" sets environment variables INSIDE the container.
+    # These are like configuration settings your app can read.
+    environment:
+      - NODE_ENV=production
+      - PORT=8080
+      - DB_HOST=db          # "db" is the name of our database service below
+
+    # "depends_on" means this service won't start until "db" is running.
+    # Makes sure the database is ready before the web app tries to connect!
+    depends_on:
+      - db
+
+    # "volumes" connect a folder on your computer to a folder in the container.
+    # This way, changes to your code show up in the container instantly!
+    volumes:
+      - ./logs:/app/logs    # Save log files on your computer, not just in the container
+
+    # "restart: unless-stopped" means Docker will restart the container if it crashes.
+    restart: unless-stopped
+
+    # "networks" connects this service to our custom network.
+    networks:
+      - cloud-network
+
+  # ── Service 2: The Database ──────────────────────────────────
+  db:
+    # We use the official PostgreSQL image from Docker Hub.
+    # No need to write a Dockerfile — Docker Hub has it ready!
+    image: postgres:15-alpine
+
+    container_name: cloud-app-db
+
+    # "environment" configures the database with a username, password, and name.
+    # ⚠️ In real projects, use secrets or .env files — NEVER hardcode passwords!
+    environment:
+      - POSTGRES_USER=clouduser
+      - POSTGRES_PASSWORD=changeme   # ← Change this in production!
+      - POSTGRES_DB=clouddb
+
+    # "volumes" persist the database data even after the container stops.
+    # Without this, all your data would be lost every time the container restarts!
+    volumes:
+      - db-data:/var/lib/postgresql/data   # Named volume for database files
+
+    # "ports" — we DON'T expose this to the host (no host port mapping).
+    # The database is only accessible from other services in our network.
+    expose:
+      - "5432"
+
+    restart: unless-stopped
+
+    networks:
+      - cloud-network
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# VOLUMES — Named storage areas that persist data between container restarts.
+# Think of these like external hard drives attached to your containers.
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+volumes:
+  db-data:    # Stores the PostgreSQL database files
+
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+# NETWORKS — A private network that only our containers can use.
+# This keeps the app secure — outside traffic can't directly reach the database!
+# ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+networks:
+  cloud-network:
+    driver: bridge   # "bridge" is the standard network mode for single-host apps
